@@ -101,7 +101,8 @@ app.post('/campgrounds', validateCampground, catchAsync(async(req, res, next) =>
 app.get('/campgrounds/:id', catchAsync(async(req, res) => {
     // console.log('This ', req.params);
     // console.log('This', req.body);
-    const campground = await Campground.findById(req.params.id)
+    const campground = await Campground.findById(req.params.id).populate('reviews');
+    console.log(campground);
     res.render('campgrounds/show', {campground});
 }))
 
@@ -126,6 +127,15 @@ app.delete('/campgrounds/:id', catchAsync(async (req, res) => {
     res.redirect('/campgrounds');
 }))
 
+app.delete('/campgrounds/:id/reviews/:reviewId', catchAsync(async (req, res) => {
+
+    const {id, reviewId} = req.params;
+    await Campground.findByIdAndUpdate(id, {$pull : {reviews : reviewId}});
+    await Review.findByIdAndDelete(reviewId);
+    res.redirect(`/campgrounds/${id}`);
+
+}))
+
 app.post('/campgrounds/:id/reviews', validateReview, catchAsync( async(req, res) => {
     const campground = await Campground.findById(req.params.id);
     const review = new Review(req.body.review);
@@ -135,6 +145,8 @@ app.post('/campgrounds/:id/reviews', validateReview, catchAsync( async(req, res)
     res.redirect(`/campgrounds/${campground._id}`);
 
 }))
+
+
 
 app.all('*', (req, res, next) => {
     next(new ExpressError('Not Found', 404));
